@@ -1,0 +1,8 @@
+flask
+pandas
+scikit-learn
+matplotlib
+scapy
+psycopg2-binary
+openpyxl
+sqlalchemy
