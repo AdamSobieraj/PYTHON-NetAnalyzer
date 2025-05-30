@@ -43,16 +43,37 @@ def load_and_train():
     df["src_ip_hash"] = df["src_ip"].apply(lambda x: hash(x) % 10000)
     df["dst_ip_hash"] = df["dst_ip"].apply(lambda x: hash(x) % 10000)
 
+    # remove old columns
+    df = df.drop(columns=["src_ip", "dst_ip"])
+
+    # convert object data types to numerical
+    # Step 1: Convert to float
+    df['time'] = pd.to_numeric(df['time'], errors='coerce')
+
+    # Step 2: Convert to datetime from Unix timestamp (seconds)
+    df['time'] = pd.to_datetime(df['time'], unit='s')
+
+    print("____________________INFO______________________________")
+    print(df.info())
+    print("____________________DESCRIBE__________________________")
+    print(df.describe())
+    print("____________________NULL CHECK________________________")
+    print(df.isnull())
+    print("____________________NULL CHECK SUM____________________")
+    print(df.isnull().sum())
+
     # Standardization of data
-    features = ["length", "protocol", "src_port", "dst_port", "src_ip_hash", "dst_ip_hash", "syn_flood", "udp_flood"]
+    features = ["length", "protocol", "src_port", "dst_port", "src_ip_hash", "dst_ip_hash", "syn_flood", "udp_flood"] # on  which is atken as anomalies and split will be done
     scaler = StandardScaler()
-    scaler.fit(df[features])
+    scaler.fit(df[features]) # training
     X_scaled_new_data = scaler.transform(df[features])
 
     # Anomaly detection model
-    model = IsolationForest(contamination=0.05, random_state=42)
-    model.fit(X_scaled_new_data)
-    df["anomaly"] = model.predict(X_scaled_new_data)
+    model = IsolationForest(contamination=0.05, random_state=42) # contamination - how many is anomaly 0-0.5 /
+    model.fit(X_scaled_new_data)# training
+    df["anomaly"] = model.predict(X_scaled_new_data) # anomaly score asigment
+
+# treningowy walidacyjny i testowy
 
     # Test data split - classification data check
     X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42)
@@ -75,9 +96,9 @@ def load_and_train():
     plt.tight_layout()
     plt.show()
     plt.close()
-
-    create_table()
-    insert_packets(df)
+    #
+    # create_table()
+    # insert_packets(df)
     return model, scaler, clf
 
 
