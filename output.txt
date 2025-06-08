@@ -1,0 +1,98 @@
+____________________RAW DATA______________________________
+____________________BASE DF______________________________
+                      time  length  protocol  ... dst_port syn_flood  udp_flood
+0        1499342338.492265     458         0  ...        0         0          0
+1        1499342340.490140     469         6  ...      389         0          0
+2        1499342340.490146     469         6  ...      389         0          0
+3        1499342340.490456     382         6  ...    33898         0          0
+4        1499342340.490460     382         6  ...    33898         0          0
+...                    ...     ...       ...  ...      ...       ...        ...
+1600886  1499343348.210164      60         6  ...       80         0          0
+1600887  1499343348.210266    2974         6  ...    49910         0          0
+1600888  1499343348.210383      60         6  ...       80         0          0
+1600889  1499343348.210457    2974         6  ...    49910         0          0
+1600890  1499343348.210650    2974         6  ...    49910         0          0
+
+[1600891 rows x 9 columns]
+____________________INFO______________________________
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1600891 entries, 0 to 1600890
+Data columns (total 9 columns):
+ #   Column       Non-Null Count    Dtype         
+---  ------       --------------    -----         
+ 0   time         1600891 non-null  datetime64[ns]
+ 1   length       1600891 non-null  int64         
+ 2   protocol     1600891 non-null  int64         
+ 3   src_port     1600891 non-null  int64         
+ 4   dst_port     1600891 non-null  int64         
+ 5   syn_flood    1600891 non-null  int64         
+ 6   udp_flood    1600891 non-null  int64         
+ 7   src_ip_hash  1600891 non-null  int64         
+ 8   dst_ip_hash  1600891 non-null  int64         
+dtypes: datetime64[ns](1), int64(8)
+memory usage: 109.9 MB
+None
+____________________DESCRIBE__________________________
+                                time        length  ...   src_ip_hash   dst_ip_hash
+count                        1600891  1.600891e+06  ...  1.600891e+06  1.600891e+06
+mean   2017-07-06 12:12:19.158525184  1.233298e+03  ...  6.286797e+03  6.093704e+03
+min    2017-07-06 11:58:58.492264986  6.000000e+01  ...  6.000000e+00  5.000000e+00
+25%    2017-07-06 12:11:06.037890304  6.000000e+01  ...  5.592000e+03  5.592000e+03
+50%    2017-07-06 12:12:39.163785984  1.514000e+03  ...  7.268000e+03  5.592000e+03
+75%    2017-07-06 12:14:13.192117504  1.514000e+03  ...  7.268000e+03  7.268000e+03
+max    2017-07-06 12:15:48.210649967  2.341400e+04  ...  9.999000e+03  9.999000e+03
+std                              NaN  1.249169e+03  ...  1.341979e+03  1.295601e+03
+
+[8 rows x 9 columns]
+____________________NULL CHECK________________________
+          time  length  protocol  ...  udp_flood  src_ip_hash  dst_ip_hash
+0        False   False     False  ...      False        False        False
+1        False   False     False  ...      False        False        False
+2        False   False     False  ...      False        False        False
+3        False   False     False  ...      False        False        False
+4        False   False     False  ...      False        False        False
+...        ...     ...       ...  ...        ...          ...          ...
+1600886  False   False     False  ...      False        False        False
+1600887  False   False     False  ...      False        False        False
+1600888  False   False     False  ...      False        False        False
+1600889  False   False     False  ...      False        False        False
+1600890  False   False     False  ...      False        False        False
+
+[1600891 rows x 9 columns]
+____________________NULL CHECK SUM____________________
+time           0
+length         0
+protocol       0
+src_port       0
+dst_port       0
+syn_flood      0
+udp_flood      0
+src_ip_hash    0
+dst_ip_hash    0
+dtype: int64
+____________________NULL CHECK PERCENT____________________
+time           0.0
+length         0.0
+protocol       0.0
+src_port       0.0
+dst_port       0.0
+syn_flood      0.0
+udp_flood      0.0
+src_ip_hash    0.0
+dst_ip_hash    0.0
+dtype: float64
+____________________CLASS DISTRIBUTION____________________
+anomaly
+ 1    1520848
+-1      80043
+Name: count, dtype: int64
+Proporcja anomalii: 5.00%
+Dystrybucja klas w y_train: anomaly
+0    1064671
+1      55952
+Name: count, dtype: int64
+Dystrybucja klas w y_test: anomaly
+0    456177
+1     24091
+Name: count, dtype: int64
+Dokładność klasyfikatora: 1.00
