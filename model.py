@@ -38,8 +38,14 @@ def load_and_train():
         except:
             continue
 
-    # Hashing
     df = pd.DataFrame(packet_data)
+
+    # dataframe coppy
+    print("____________________BASE DF______________________________")
+    df_copy = df.copy()
+    print(df_copy)
+
+    # Hashing
     df["src_ip_hash"] = df["src_ip"].apply(lambda x: hash(x) % 10000)
     df["dst_ip_hash"] = df["dst_ip"].apply(lambda x: hash(x) % 10000)
 
@@ -61,6 +67,8 @@ def load_and_train():
     print(df.isnull())
     print("____________________NULL CHECK SUM____________________")
     print(df.isnull().sum())
+    print("____________________NULL CHECK PERCENT____________________")
+    print(df.isnull().mean())
 
     # Standardization of data
     features = ["length", "protocol", "src_port", "dst_port", "src_ip_hash", "dst_ip_hash", "syn_flood", "udp_flood"] # on  which is atken as anomalies and split will be done
@@ -73,7 +81,7 @@ def load_and_train():
     model.fit(X_scaled_new_data)# training
     df["anomaly"] = model.predict(X_scaled_new_data) # anomaly score asigment
 
-# treningowy walidacyjny i testowy
+    # treningowy walidacyjny i testowy
 
     # Test data split - classification data check
     X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42)
