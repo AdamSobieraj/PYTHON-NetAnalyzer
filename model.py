@@ -11,7 +11,10 @@ def load_and_train():
     packets = rdpcap("data/testwire.pcapng") # wczytanie pliku PCAP z pakietami
     packet_data = [] # lista do przechowywania przetworzonych pakietów
 
+    print("____________________RAW DATA______________________________")
+
     for pkt in packets:  # iteracja po każdym pakiecie
+        print(pkt)
         try:
             length = len(pkt)  # długość pakietu (bajty)
             proto = pkt.proto if hasattr(pkt, 'proto') else 0  # numer protokołu (jeśli istnieje)
