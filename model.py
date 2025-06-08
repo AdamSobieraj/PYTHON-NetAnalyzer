@@ -5,8 +5,6 @@ from sklearn.ensemble import IsolationForest, RandomForestClassifier  # modele M
 from sklearn.model_selection import train_test_split  # podział danych na zbiory treningowe/testowe
 from sklearn.preprocessing import StandardScaler  # normalizacja danych
 
-from database import create_table, insert_packets # funkcje do zapisu wyników do bazy danych (lokalne)
-
 
 # Główna funkcja: ładowanie danych i trenowanie modeli
 def load_and_train():
@@ -83,12 +81,17 @@ def load_and_train():
     model.fit(X_scaled_new_data)  # uczenie modelu
     df["anomaly"] = model.predict(X_scaled_new_data)  # -1 = anomalia, 1 = normalne dane
 
+    # Diagnostyka rozkładu klas
+    print("____________________CLASS DISTRIBUTION____________________")
+    print(df["anomaly"].value_counts())
+    print("Proporcja anomalii: {:.2%}".format((df["anomaly"] == -1).mean()))
+
     # treningowy walidacyjny i testowy
 
     # podział danych na treningowe/testowe do klasyfikacji (czy pakiet to anomalia)
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42, shuffle=True)
 
-    clf = RandomForestClassifier() # klasyfikator Random Forest
+    clf = RandomForestClassifier(class_weight="balanced") # klasyfikator Random Forest
     clf.fit(X_train, y_train) # uczenie modelu klasyfikacyjnego
     score = clf.score(X_test, y_test) # ocena skuteczności modelu
     print(f"Dokładność klasyfikatora: {score:.2f}") # wyświetlenie dokładności
