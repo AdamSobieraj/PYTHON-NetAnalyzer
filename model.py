@@ -4,7 +4,10 @@ from scapy.all import rdpcap, IP, TCP, UDP  # biblioteka Scapy do wczytywania i 
 from sklearn.ensemble import IsolationForest, RandomForestClassifier  # modele ML: jeden do anomalii, drugi do klasyfikacji
 from sklearn.model_selection import train_test_split  # podział danych na zbiory treningowe/testowe
 from sklearn.preprocessing import StandardScaler  # normalizacja danych
+import sys
 
+# Redirect stdout to a text file
+sys.stdout = open("output.txt", "w")
 
 # Główna funkcja: ładowanie danych i trenowanie modeli
 def load_and_train():
@@ -97,8 +100,6 @@ def load_and_train():
 
     print("Dystrybucja klas w y_train:", pd.Series(y_train).value_counts())
     print("Dystrybucja klas w y_test:", pd.Series(y_test).value_counts())
-    print("Dystrybucja klas w X_train:", pd.Series(X_train).value_counts())
-    print("Dystrybucja klas w X_test:", pd.Series(X_test).value_counts())
 
     clf = RandomForestClassifier(class_weight="balanced") # klasyfikator Random Forest
     clf.fit(X_train, y_train) # uczenie modelu klasyfikacyjnego
