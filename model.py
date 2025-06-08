@@ -1,30 +1,31 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-from scapy.all import rdpcap, IP, TCP, UDP
-from sklearn.ensemble import IsolationForest, RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt  # biblioteka do tworzenia wykresów
+import pandas as pd  # biblioteka do manipulacji danymi (DataFrame)
+from scapy.all import rdpcap, IP, TCP, UDP  # biblioteka Scapy do wczytywania i analizy pakietów sieciowych
+from sklearn.ensemble import IsolationForest, RandomForestClassifier  # modele ML: jeden do anomalii, drugi do klasyfikacji
+from sklearn.model_selection import train_test_split  # podział danych na zbiory treningowe/testowe
+from sklearn.preprocessing import StandardScaler  # normalizacja danych
 
-from database import create_table, insert_packets
+from database import create_table, insert_packets # funkcje do zapisu wyników do bazy danych (lokalne)
 
 
-# Reading data for model learning
+# Główna funkcja: ładowanie danych i trenowanie modeli
 def load_and_train():
-    packets = rdpcap("data/testwire.pcapng")
-    packet_data = []
-    for pkt in packets:
-        try:
-            length = len(pkt)
-            proto = pkt.proto if hasattr(pkt, 'proto') else 0
-            time_pkt = pkt.time
-            src_ip = pkt[IP].src if IP in pkt else "0.0.0.0"
-            dst_ip = pkt[IP].dst if IP in pkt else "0.0.0.0"
-            src_port = pkt.sport if TCP in pkt or UDP in pkt else 0
-            dst_port = pkt.dport if TCP in pkt or UDP in pkt else 0
-            syn_flag = 1 if TCP in pkt and pkt[TCP].flags == "S" else 0
-            udp_flood = 1 if UDP in pkt and length > 1000 else 0
+    packets = rdpcap("data/testwire.pcapng") # wczytanie pliku PCAP z pakietami
+    packet_data = [] # lista do przechowywania przetworzonych pakietów
 
-            packet_data.append({
+    for pkt in packets:  # iteracja po każdym pakiecie
+        try:
+            length = len(pkt)  # długość pakietu (bajty)
+            proto = pkt.proto if hasattr(pkt, 'proto') else 0  # numer protokołu (jeśli istnieje)
+            time_pkt = pkt.time  # czas odebrania pakietu (znacznik czasu UNIX)
+            src_ip = pkt[IP].src if IP in pkt else "0.0.0.0"  # adres źródłowy IP
+            dst_ip = pkt[IP].dst if IP in pkt else "0.0.0.0"  # adres docelowy IP
+            src_port = pkt.sport if TCP in pkt or UDP in pkt else 0  # port źródłowy TCP/UDP
+            dst_port = pkt.dport if TCP in pkt or UDP in pkt else 0  # port docelowy TCP/UDP
+            syn_flag = 1 if TCP in pkt and pkt[TCP].flags == "S" else 0  # flaga SYN (SYN flood)
+            udp_flood = 1 if UDP in pkt and length > 1000 else 0  # heurystyka: duży pakiet UDP = potencjalny atak
+
+            packet_data.append({  # dodanie przetworzonych danych do listy
                 "time": time_pkt,
                 "length": length,
                 "protocol": proto,
@@ -36,20 +37,20 @@ def load_and_train():
                 "udp_flood": udp_flood
             })
         except:
-            continue
+            continue # pomijanie pakietów, które wywołują wyjątki (np. uszkodzone)
 
     df = pd.DataFrame(packet_data)
 
     # dataframe coppy
     print("____________________BASE DF______________________________")
-    df_copy = df.copy()
+    df_copy = df.copy() # kopia DataFrame'u do podglądu surowych danych
     print(df_copy)
 
     # Hashing
-    df["src_ip_hash"] = df["src_ip"].apply(lambda x: hash(x) % 10000)
-    df["dst_ip_hash"] = df["dst_ip"].apply(lambda x: hash(x) % 10000)
+    df["src_ip_hash"] = df["src_ip"].apply(lambda x: hash(x) % 10000) # skrócony hash IP źródłowego
+    df["dst_ip_hash"] = df["dst_ip"].apply(lambda x: hash(x) % 10000) # skrócony hash IP docelowego
 
-    # remove old columns
+    # usunięcie adresów IP (zamienione hashami)
     df = df.drop(columns=["src_ip", "dst_ip"])
 
     # convert object data types to numerical
@@ -60,40 +61,43 @@ def load_and_train():
     df['time'] = pd.to_datetime(df['time'], unit='s')
 
     print("____________________INFO______________________________")
-    print(df.info())
+    print(df.info())  # wyświetlenie informacji o kolumnach i typach danych
     print("____________________DESCRIBE__________________________")
-    print(df.describe())
+    print(df.describe())  # statystyki opisowe (średnie, min/max itd.)
     print("____________________NULL CHECK________________________")
-    print(df.isnull())
+    print(df.isnull())  # sprawdzenie brakujących wartości
     print("____________________NULL CHECK SUM____________________")
-    print(df.isnull().sum())
+    print(df.isnull().sum())  # suma braków w kolumnach
     print("____________________NULL CHECK PERCENT____________________")
-    print(df.isnull().mean())
+    print(df.isnull().mean())  # procent braków w kolumnach
 
-    # Standardization of data
-    features = ["length", "protocol", "src_port", "dst_port", "src_ip_hash", "dst_ip_hash", "syn_flood", "udp_flood"] # on  which is atken as anomalies and split will be done
-    scaler = StandardScaler()
-    scaler.fit(df[features]) # training
-    X_scaled_new_data = scaler.transform(df[features])
+    # lista cech używana do uczenia modelu
+    features = ["length", "protocol", "src_port", "dst_port", "src_ip_hash", "dst_ip_hash", "syn_flood", "udp_flood"]
+
+    scaler = StandardScaler()  # normalizacja danych
+    scaler.fit(df[features])  # dopasowanie normalizacji do danych
+    X_scaled_new_data = scaler.transform(df[features])  # przeskalowanie danych
 
     # Anomaly detection model
-    model = IsolationForest(contamination=0.05, random_state=42) # contamination - how many is anomaly 0-0.5 /
-    model.fit(X_scaled_new_data)# training
-    df["anomaly"] = model.predict(X_scaled_new_data) # anomaly score asigment
+    model = IsolationForest(contamination=0.05, random_state=42)  # model detekcji anomalii (5% jako anomalie)
+    model.fit(X_scaled_new_data)  # uczenie modelu
+    df["anomaly"] = model.predict(X_scaled_new_data)  # -1 = anomalia, 1 = normalne dane
 
     # treningowy walidacyjny i testowy
 
-    # Test data split - classification data check
+    # podział danych na treningowe/testowe do klasyfikacji (czy pakiet to anomalia)
     X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42)
-    clf = RandomForestClassifier()
-    clf.fit(X_train, y_train)
-    score = clf.score(X_test, y_test)
-    print(f"Dokładność klasyfikatora: {score:.2f}")
 
-    # Display anomaly vs normal traffic
+    clf = RandomForestClassifier() # klasyfikator Random Forest
+    clf.fit(X_train, y_train) # uczenie modelu klasyfikacyjnego
+    score = clf.score(X_test, y_test) # ocena skuteczności modelu
+    print(f"Dokładność klasyfikatora: {score:.2f}") # wyświetlenie dokładności
+
+    # podział na ruch normalny i anomalie
     normal = df[df["anomaly"] == 1]
     attacks = df[df["anomaly"] == -1]
 
+    # tworzenie wykresu
     plt.figure(figsize=(12, 6))
     plt.scatter(normal.index, normal["length"], c="green", alpha=0.5, s=10, label="Normalny ruch")
     plt.scatter(attacks.index, attacks["length"], c="red", alpha=0.5, s=10, label="Atak (DoS/DDoS)")
@@ -102,12 +106,13 @@ def load_and_train():
     plt.ylabel("Rozmiar pakietu")
     plt.legend()
     plt.tight_layout()
-    plt.show()
-    plt.close()
-    #
-    # create_table()
-    # insert_packets(df)
-    return model, scaler, clf
+    plt.show()  # wyświetlenie wykresu
+    plt.close()  # zamknięcie wykresu
+
+    # create_table()  # tworzenie tabeli w bazie danych – obecnie zakomentowane
+    # insert_packets(df)  # zapis wyników do bazy danych – obecnie zakomentowane
+
+    return model, scaler, clf  # zwrócenie wytrenowanych modeli
 
 
 
