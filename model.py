@@ -92,7 +92,11 @@ def load_and_train():
     # treningowy walidacyjny i testowy
 
     # podział danych na treningowe/testowe do klasyfikacji (czy pakiet to anomalia)
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, (df["anomaly"] == -1).astype(int), test_size=0.3, random_state=42, shuffle=True)
+    y = df["anomaly"].apply(lambda x: 1 if x == -1 else 0)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled_new_data, y, test_size=0.3, random_state=42,shuffle=True)
+
+    print("Dystrybucja klas w y_train:", pd.Series(y_train).value_counts())
+    print("Dystrybucja klas w y_test:", pd.Series(y_test).value_counts())
 
     clf = RandomForestClassifier(class_weight="balanced") # klasyfikator Random Forest
     clf.fit(X_train, y_train) # uczenie modelu klasyfikacyjnego
