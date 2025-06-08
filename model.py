@@ -97,6 +97,8 @@ def load_and_train():
 
     print("Dystrybucja klas w y_train:", pd.Series(y_train).value_counts())
     print("Dystrybucja klas w y_test:", pd.Series(y_test).value_counts())
+    print("Dystrybucja klas w X_train:", pd.Series(X_train).value_counts())
+    print("Dystrybucja klas w X_test:", pd.Series(X_test).value_counts())
 
     clf = RandomForestClassifier(class_weight="balanced") # klasyfikator Random Forest
     clf.fit(X_train, y_train) # uczenie modelu klasyfikacyjnego
